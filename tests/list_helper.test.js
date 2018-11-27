@@ -1,5 +1,6 @@
 const totalLikes = require('../utils/list_helper').totalLikes
 const favoriteBlog = require('../utils/list_helper').favoriteBlog
+const mostBlogs = require('../utils/list_helper').mostBlogs
 
 const zeroBlogs = []
 const oneBlog = [
@@ -120,6 +121,26 @@ describe('favorite blog', () => {
       title: 'Canonical string reduction',
       author: 'Edsger W. Dijkstra',
       likes: 12,
+    })
+  })
+})
+
+describe('most blogs', () => {
+  test('no blogs at all', () => {
+    expect(mostBlogs(zeroBlogs)).toBeUndefined()
+  })
+
+  test('one blog', () => {
+    expect(mostBlogs(oneBlog)).toEqual({
+      author: 'James Moore',
+      blogs: 1
+    })
+  })
+
+  test('many blogs', () => {
+    expect(mostBlogs(manyBlogs)).toEqual({
+      author: 'Robert C. Martin',
+      blogs: 3
     })
   })
 })

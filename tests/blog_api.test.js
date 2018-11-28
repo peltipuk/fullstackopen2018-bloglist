@@ -55,12 +55,9 @@ const initialBlogs = [
 ]
 
 beforeAll(async () => {
-  console.log('beforeAll')
-  const value = await waitForServer()
-  console.log('waitForServer value:', value)
-  console.log('Deleting all blogs')
+  await waitForServer()
+  console.log('Initializing blogs')
   await Blog.remove({})
-  console.log('Deleted')
 
   const blogObjects = initialBlogs.map(blog => new Blog(
     {
@@ -69,10 +66,8 @@ beforeAll(async () => {
       url: blog.url,
       likes: blog.likes
     }))
-  console.log('Initializing blogs')
   const promiseArray = blogObjects.map(blog => blog.save())
   await Promise.all(promiseArray)
-  console.log('Initialized')
 })
 
 // Using promises
@@ -95,8 +90,8 @@ describe.only('blogs api', () => {
   test('blogs are returned as json', async () => {
     const response = await api.get('/api/blogs')
 
-    console.log('Response headers: ', response.headers)
-    console.log('Response body:', response.body)
+    //console.log('Response headers: ', response.headers)
+    //console.log('Response body:', response.body)
     expect(response.status).toBe(200)
     expect(response.headers['content-type']).toMatch(/application\/json/)
 
@@ -104,12 +99,12 @@ describe.only('blogs api', () => {
   })
 
   test('new blog can be posted', async () => {
-    const newBlog = new Blog({
+    const newBlog = {
       title: 'Some exciting blog',
       author: 'Mr. Exciting',
       url: 'www.exciting.com/blog',
       likes: 3
-    })
+    }
 
     await api
       .post('/api/blogs')
@@ -122,8 +117,26 @@ describe.only('blogs api', () => {
     expect(response.body.length).toBe(initialBlogs.length + 1)
     expect(titles).toContain('Some exciting blog')
   })
-})
 
+  test('initial likes count is 0 if not defined explicitly', async () => {
+    const newBlog = {
+      title: 'Adventure Blog',
+      author: 'Jekyll',
+      url: 'www.adventures.com/blog',
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+
+    const response = await api.get('/api/blogs')
+    const newReturnedBlog = response.body.find(blog => blog.title === 'Adventure Blog')
+    expect(newReturnedBlog).toBeDefined()
+    expect(newReturnedBlog.likes).toBe(0)
+  })
+
+})
 
 afterAll(() => {
   server.close()

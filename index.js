@@ -30,7 +30,6 @@ mongoose
 
 const server = http.createServer(app)
 let serverRunning = false
-console.log('before server.listen')
 server.listen(config.port, () => {
   console.log(`Server running on port ${config.port}`)
   serverRunning = true
@@ -42,20 +41,15 @@ server.on('close', () => {
 })
 
 const waitForServer = () => {
-  if(serverRunning) {
+  if (serverRunning) {
     // Not sure if this is ever needed
-    console.log('Server already running')
     return Promise.resolve(true)
   } else {
-    console.log('Waiting for server')
-    return new Promise(function(resolve) {
-      console.log('server started')
+    return new Promise(function (resolve) {
       app.on('app started', resolve)
     })
   }
 }
-
-console.log('AAA')
 
 module.exports = {
   app, server, waitForServer

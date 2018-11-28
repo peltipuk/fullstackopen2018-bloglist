@@ -136,6 +136,33 @@ describe.only('blogs api', () => {
     expect(newReturnedBlog.likes).toBe(0)
   })
 
+  test('blog should contain title and url', async () => {
+    const blogWithoutTitle = {
+      author: 'James Bond',
+      url: 'www.007.com'
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(blogWithoutTitle)
+      .expect(400)
+
+    let response = await api.get('/api/blogs')
+    expect(response.body.map(blog => blog.author)).not.toContain('James Bond')
+
+    const blogWithoutUrl = {
+      author: 'James Bond',
+      title: 'Secret Agent Blog'
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(blogWithoutUrl)
+      .expect(400)
+
+    response = await api.get('/api/blogs')
+    expect(response.body.map(blog => blog.author)).not.toContain('James Bond')
+  })
 })
 
 afterAll(() => {

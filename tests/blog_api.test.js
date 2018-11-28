@@ -1,5 +1,5 @@
 const supertest = require('supertest')
-const { app, server } = require('../index')
+const { app, server, waitForServer } = require('../index')
 const api = supertest(app)
 const Blog = require('../models/blog')
 
@@ -55,6 +55,9 @@ const initialBlogs = [
 ]
 
 beforeAll(async () => {
+  console.log('beforeAll')
+  const value = await waitForServer()
+  console.log('waitForServer value:', value)
   console.log('Deleting all blogs')
   await Blog.remove({})
   console.log('Deleted')
@@ -99,7 +102,28 @@ describe.only('blogs api', () => {
 
     expect(response.body.length).toBe(initialBlogs.length)
   })
+
+  test('new blog can be posted', async () => {
+    const newBlog = new Blog({
+      title: 'Some exciting blog',
+      author: 'Mr. Exciting',
+      url: 'www.exciting.com/blog',
+      likes: 3
+    })
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const response = await api.get('/api/blogs')
+    const titles = response.body.map(b => b.title)
+    expect(response.body.length).toBe(initialBlogs.length + 1)
+    expect(titles).toContain('Some exciting blog')
+  })
 })
+
 
 afterAll(() => {
   server.close()

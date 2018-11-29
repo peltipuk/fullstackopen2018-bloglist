@@ -46,12 +46,33 @@ blogsRouter.post('/', (request, response) => {
     })
 })
 
+blogsRouter.put('/:id', async (request, response) => {
+  try {
+    const blog = {
+      url: request.body.url,
+      likes: request.body.likes
+    }
+    console.log(`Updating blog ${request.params.id} with values`, blog)
+    const updatedBlog = await Blog
+      .findByIdAndUpdate(request.params.id, blog, { new: true })
+    if (updatedBlog) {
+      console.log('Updated blog:', updatedBlog)
+      response.status(200).json(updatedBlog)
+    } else {
+      response.status(404).end()
+    }
+  } catch (err) {
+    console.log(`Cannot update blog ${request.params.id}`, err)
+    response.status(500).json({ error: err.message })
+  }
+})
+
 blogsRouter.delete('/:id', async (request, response) => {
   try {
     const blog = await Blog.findByIdAndDelete(request.params.id)
     console.log('Deleting blog:', blog)
     response.status(204).end()
-  } catch(err) {
+  } catch (err) {
     console.log(`Error deleting blog ${request.params.id}`, err)
   }
 })

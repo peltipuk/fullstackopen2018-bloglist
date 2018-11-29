@@ -139,6 +139,20 @@ describe('when there is initially some blogs saved', async () => {
         .not.toBeDefined()
     })
   })
+
+  describe('deletion of a blog', async () => {
+    test('deletion of a single blog', async () => {
+      const blogsAtStart = await blogsInDb()
+      const blogToBeDeleted = blogsAtStart[0]
+
+      const response = await api.delete(`/api/blogs/${blogToBeDeleted.id}`)
+
+      const blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation.length).toBe(blogsAtStart - 1)
+      expect(blogsAfterOperation.find(blog => blog.id === blogToBeDeleted.id))
+        .not.toBeDefined()
+    })
+  })
 })
 
 afterAll(() => {

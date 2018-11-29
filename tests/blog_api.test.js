@@ -2,166 +2,142 @@ const supertest = require('supertest')
 const { app, server, waitForServer } = require('../index')
 const api = supertest(app)
 const Blog = require('../models/blog')
-
-const initialBlogs = [
-  {
-    _id: '5a422a851b54a676234d17f7',
-    title: 'React patterns',
-    author: 'Michael Chan',
-    url: 'https://reactpatterns.com/',
-    likes: 7,
-    __v: 0
-  },
-  {
-    _id: '5a422aa71b54a676234d17f8',
-    title: 'Go To Statement Considered Harmful',
-    author: 'Edsger W. Dijkstra',
-    url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-    likes: 5,
-    __v: 0
-  },
-  {
-    _id: '5a422b3a1b54a676234d17f9',
-    title: 'Canonical string reduction',
-    author: 'Edsger W. Dijkstra',
-    url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
-    likes: 12,
-    __v: 0
-  },
-  {
-    _id: '5a422b891b54a676234d17fa',
-    title: 'First class tests',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-    likes: 10,
-    __v: 0
-  },
-  {
-    _id: '5a422ba71b54a676234d17fb',
-    title: 'TDD harms architecture',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html',
-    likes: 0,
-    __v: 0
-  },
-  {
-    _id: '5a422bc61b54a676234d17fc',
-    title: 'Type wars',
-    author: 'Robert C. Martin',
-    url: 'http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html',
-    likes: 2,
-    __v: 0
-  }
-]
+const { initialBlogs, nonExistingId, blogsInDb } = require('./test_helper')
 
 beforeAll(async () => {
   await waitForServer()
-  console.log('Initializing blogs')
-  await Blog.remove({})
-
-  const blogObjects = initialBlogs.map(blog => new Blog(
-    {
-      title: blog.title,
-      author: blog.author,
-      url: blog.url,
-      likes: blog.likes
-    }))
-  const promiseArray = blogObjects.map(blog => blog.save())
-  await Promise.all(promiseArray)
 })
 
-// Using promises
-/*
-describe.only('blogs api', () => {
-  test('blogs are returned as json', (done) => {
-    api
-      .get('/api/blogs')
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-      .then(() => {
-        done()
+describe('when there is initially some blogs saved', async () => {
+  beforeAll(async () => {
+
+    console.log('Initializing blogs')
+    await Blog.remove({})
+
+    const blogObjects = initialBlogs.map(blog => new Blog(blog))
+    const promiseArray = blogObjects.map(blog => blog.save())
+    await Promise.all(promiseArray)
+  })
+
+  describe('blogs api', () => {
+    test('blogs are returned as json', async () => {
+      const blogsInDatabase = await blogsInDb()
+      const response = await api.get('/api/blogs')
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toMatch(/application\/json/)
+
+      expect(response.body.length).toBe(blogsInDatabase.length)
+
+      const returnedTitles = response.body.map(b => b.title)
+      blogsInDatabase.forEach(blog => {
+        expect(returnedTitles).toContain(blog.title)
       })
-  })
-})
-*/
+    })
 
-// Using async/await
-describe.only('blogs api', () => {
-  test('blogs are returned as json', async () => {
-    const response = await api.get('/api/blogs')
+    test('individual blogs are returned as json by GET /api/blogs/:id', async () => {
+      const blogsInDatabase = await blogsInDb()
+      const aBlog = blogsInDatabase[0]
+      console.log('aBlog:', aBlog)
 
-    //console.log('Response headers: ', response.headers)
-    //console.log('Response body:', response.body)
-    expect(response.status).toBe(200)
-    expect(response.headers['content-type']).toMatch(/application\/json/)
+      const response = await api
+        .get(`/api/blogs/${aBlog.id}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
 
-    expect(response.body.length).toBe(initialBlogs.length)
-  })
+      console.log('Individual:', response.body)
+      expect(response.body.title).toBe(aBlog.title)
+    })
 
-  test('new blog can be posted', async () => {
-    const newBlog = {
-      title: 'Some exciting blog',
-      author: 'Mr. Exciting',
-      url: 'www.exciting.com/blog',
-      likes: 3
-    }
+    test('404 returned by GET /api/blogs/:id with nonexisting valid id', async () => {
+      const validNonexistingId = await nonExistingId()
+      console.log('validNonExistingId', validNonexistingId)
+      await api
+        .get(`/api/blogs/${validNonexistingId}`)
+        .expect(404)
+    })
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
+    test('400 is returned by GET /api/blogs/:id with invalid id', async () => {
+      const invalidId = '5a3d5da59070081a82a3445'
 
-    const response = await api.get('/api/blogs')
-    const titles = response.body.map(b => b.title)
-    expect(response.body.length).toBe(initialBlogs.length + 1)
-    expect(titles).toContain('Some exciting blog')
+      await api
+        .get(`/api/blogs/${invalidId}`)
+        .expect(400)
+    })
   })
 
-  test('initial likes count is 0 if not defined explicitly', async () => {
-    const newBlog = {
-      title: 'Adventure Blog',
-      author: 'Jekyll',
-      url: 'www.adventures.com/blog',
-    }
+  describe('addition of a new blog', async () => {
+    test('new valid blog can be posted', async () => {
+      const blogsAtStart = await blogsInDb()
 
-    await api
-      .post('/api/blogs')
-      .send(newBlog)
-      .expect(201)
+      const newBlog = {
+        title: 'Some exciting blog',
+        author: 'Mr. Exciting',
+        url: 'www.exciting.com/blog',
+        likes: 3
+      }
 
-    const response = await api.get('/api/blogs')
-    const newReturnedBlog = response.body.find(blog => blog.title === 'Adventure Blog')
-    expect(newReturnedBlog).toBeDefined()
-    expect(newReturnedBlog.likes).toBe(0)
-  })
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
 
-  test('blog should contain title and url', async () => {
-    const blogWithoutTitle = {
-      author: 'James Bond',
-      url: 'www.007.com'
-    }
+      const blogsAfterOperation = await blogsInDb()
 
-    await api
-      .post('/api/blogs')
-      .send(blogWithoutTitle)
-      .expect(400)
+      const titles = blogsAfterOperation.map(b => b.title)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length + 1)
+      expect(titles).toContain('Some exciting blog')
+    })
 
-    let response = await api.get('/api/blogs')
-    expect(response.body.map(blog => blog.author)).not.toContain('James Bond')
+    test('initial likes count is 0 if not defined explicitly', async () => {
+      const newBlog = {
+        title: 'Adventure Blog',
+        author: 'Jekyll',
+        url: 'www.adventures.com/blog',
+      }
 
-    const blogWithoutUrl = {
-      author: 'James Bond',
-      title: 'Secret Agent Blog'
-    }
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
 
-    await api
-      .post('/api/blogs')
-      .send(blogWithoutUrl)
-      .expect(400)
+      const blogsAfterOperation = await blogsInDb()
+      const newlyAddedBlog = blogsAfterOperation.find(blog => blog.title === 'Adventure Blog')
+      expect(newlyAddedBlog).toBeDefined()
+      expect(newlyAddedBlog.likes).toBe(0)
+    })
 
-    response = await api.get('/api/blogs')
-    expect(response.body.map(blog => blog.author)).not.toContain('James Bond')
+    test.only('blog should contain title and url', async () => {
+      const blogWithoutTitle = {
+        author: 'James Bond',
+        url: 'www.007.com'
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(blogWithoutTitle)
+        .expect(400)
+
+      let blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation.find(blog => blog.author === 'James Bond'))
+        .not.toBeDefined()
+
+      const blogWithoutUrl = {
+        author: 'James Bond',
+        title: 'Secret Agent Blog'
+      }
+
+      await api
+        .post('/api/blogs')
+        .send(blogWithoutUrl)
+        .expect(400)
+
+      blogsAfterOperation = await blogsInDb()
+      expect(blogsAfterOperation
+        .find(blog => blog.author === 'James Bond'))
+        .not.toBeDefined()
+    })
   })
 })
 

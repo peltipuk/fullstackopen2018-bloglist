@@ -9,6 +9,20 @@ blogsRouter.get('/', (request, response) => {
     })
 })
 
+blogsRouter.get('/:id', async (request, response) => {
+  try {
+    const blog = await Blog.findById(request.params.id)
+    if (blog) {
+      response.status(200).json(blog)
+    } else {
+      response.status(404).end()
+    }
+  } catch (exception) {
+    console.log(exception.message)
+    response.status(400).send({ error: 'malformatted id' })
+  }
+})
+
 blogsRouter.post('/', (request, response) => {
   const blog = new Blog(request.body)
   if (blog.likes === undefined) {

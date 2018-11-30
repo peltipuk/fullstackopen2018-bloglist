@@ -145,7 +145,7 @@ describe('when there is initially some blogs saved', async () => {
       const blogsAtStart = await blogsInDb()
       const blogToBeDeleted = blogsAtStart[0]
 
-      const response = await api.delete(`/api/blogs/${blogToBeDeleted.id}`)
+      await api.delete(`/api/blogs/${blogToBeDeleted.id}`)
 
       const blogsAfterOperation = await blogsInDb()
       expect(blogsAfterOperation.length).toBe(blogsAtStart - 1)

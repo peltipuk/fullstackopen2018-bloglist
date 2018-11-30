@@ -18,6 +18,7 @@ usersRouter.post('/', async (request, response) => {
 
     const rounds = 10
     const hash = await bcrypt.hash(password, rounds)
+    //console.log(`pass: ${password}, hash: ${hash}`)
     const user = new User({
       username: username,
       name: body.name,

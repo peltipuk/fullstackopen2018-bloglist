@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const morgan = require('morgan')
 const blogsRouter = require('./controllers/blogs')
 const usersRouter = require('./controllers/users')
+const loginRouter = require('./controllers/login')
 const config = require('./utils/config')
 
 app.use(morgan(':method :url :body :status :res[content-length] - :response-time ms', { immediate: true }))
@@ -18,6 +19,7 @@ app.use(cors())
 app.use(bodyParser.json())
 app.use('/api/blogs', blogsRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/login', loginRouter)
 
 // MongoDB connection
 mongoose.set('useNewUrlParser', true)

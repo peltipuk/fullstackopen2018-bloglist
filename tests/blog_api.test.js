@@ -5,6 +5,7 @@ const Blog = require('../models/blog')
 const { initialBlogs, nonExistingId, blogsInDb } = require('./test_helper')
 
 beforeAll(async () => {
+  console.log('blog: wait for server')
   await waitForServer()
 })
 
@@ -108,7 +109,7 @@ describe('when there is initially some blogs saved', async () => {
       expect(newlyAddedBlog.likes).toBe(0)
     })
 
-    test.only('blog should contain title and url', async () => {
+    test('blog should contain title and url', async () => {
       const blogWithoutTitle = {
         author: 'James Bond',
         url: 'www.007.com'
@@ -148,7 +149,7 @@ describe('when there is initially some blogs saved', async () => {
       await api.delete(`/api/blogs/${blogToBeDeleted.id}`)
 
       const blogsAfterOperation = await blogsInDb()
-      expect(blogsAfterOperation.length).toBe(blogsAtStart - 1)
+      expect(blogsAfterOperation.length).toBe(blogsAtStart.length - 1)
       expect(blogsAfterOperation.find(blog => blog.id === blogToBeDeleted.id))
         .not.toBeDefined()
     })

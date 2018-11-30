@@ -79,7 +79,7 @@ const manyBlogs = [
   }
 ]
 
-describe.skip('total likes', () => {
+describe('total likes', () => {
   test('no blogs at all', () => {
     expect(totalLikes(zeroBlogs)).toBe(0)
   })
@@ -93,7 +93,7 @@ describe.skip('total likes', () => {
   })
 })
 
-describe.skip('favorite blog', () => {
+describe('favorite blog', () => {
   test('no blogs at all', () => {
     expect(favoriteBlog(zeroBlogs)).toBeUndefined()
   })
@@ -123,7 +123,7 @@ describe.skip('favorite blog', () => {
   })
 })
 
-describe.skip('most blogs', () => {
+describe('most blogs', () => {
   test('no blogs at all', () => {
     expect(mostBlogs(zeroBlogs)).toBeUndefined()
   })
@@ -143,7 +143,7 @@ describe.skip('most blogs', () => {
   })
 })
 
-describe.skip('most likes', () => {
+describe('most likes', () => {
   test('no blogs at all', () => {
     expect(mostLikes(zeroBlogs)).toBeUndefined()
   })

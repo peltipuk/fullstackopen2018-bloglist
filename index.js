@@ -32,11 +32,18 @@ mongoose
 
 const server = http.createServer(app)
 let serverRunning = false
-server.listen(config.port, () => {
-  console.log(`Server running on port ${config.port}`)
+
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(config.port, () => {
+    console.log(`Server running on port ${config.port}`)
+    serverRunning = true
+    app.emit('app started')
+  })
+} else {
   serverRunning = true
   app.emit('app started')
-})
+}
+
 server.on('close', () => {
   console.log('Closing mongoose connection')
   mongoose.connection.close()
@@ -45,6 +52,7 @@ server.on('close', () => {
 const waitForServer = () => {
   if (serverRunning) {
     // Not sure if this is ever needed
+    console.log('Already running')
     return Promise.resolve(true)
   } else {
     return new Promise(function (resolve) {

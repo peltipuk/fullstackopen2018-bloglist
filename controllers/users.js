@@ -5,11 +5,21 @@ const bcrypt = require('bcrypt')
 usersRouter.post('/', async (request, response) => {
   try {
     const body = request.body
+    const username = body.username
+    const password = body.password
+
+    const existingUsers = await User.find({ username: username })
+    if (existingUsers.length > 0) {
+      return response.status(409).json({ error: `User already exists: ${username}` })
+    }
+    if (password.length < 3) {
+      return response.status(400).json({ error: 'Password should be at least 3 characters long' })
+    }
 
     const rounds = 10
-    const hash = await bcrypt.hash(body.password, rounds)
+    const hash = await bcrypt.hash(password, rounds)
     const user = new User({
-      username: body.username,
+      username: username,
       name: body.name,
       adult: body.adult === undefined ? true : body.adult,
       passwordHash: hash

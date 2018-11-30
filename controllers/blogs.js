@@ -1,17 +1,19 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
-blogsRouter.get('/', (request, response) => {
-  Blog
+blogsRouter.get('/', async (request, response) => {
+  const blogs = await Blog
     .find({})
-    .then(blogs => {
-      response.json(blogs)
-    })
+    .populate('user', { username: 1, name: 1, _id: 1 })
+  response.json(blogs)
 })
 
 blogsRouter.get('/:id', async (request, response) => {
   try {
-    const blog = await Blog.findById(request.params.id)
+    const blog = await Blog
+      .findById(request.params.id)
+      .populate('user', { username: 1, name: 1, _id: 1 })
     if (blog) {
       response.status(200).json(blog)
     } else {
@@ -23,27 +25,38 @@ blogsRouter.get('/:id', async (request, response) => {
   }
 })
 
-blogsRouter.post('/', (request, response) => {
-  const blog = new Blog(request.body)
-  if (blog.likes === undefined) {
-    blog.likes = 0
-  }
+blogsRouter.post('/', async (request, response) => {
+  try {
+    const receivedBlog = request.body
+    const user = (await User.find({}))[0]
+    receivedBlog.user = user._id
+    console.log('Received blog:', receivedBlog)
 
-  if (blog.title === undefined) {
-    console.log('Not adding blog without title')
-    return response.status(400).json({ error: 'Missing title' })
-  }
-  if (blog.url === undefined) {
-    console.log('Not adding blog without url')
-    return response.status(400).json({ error: 'Missing url' })
-  }
-  console.log('Adding blog', blog)
+    const blog = new Blog(receivedBlog)
+    if (blog.likes === undefined) {
+      blog.likes = 0
+    }
 
-  blog
-    .save()
-    .then(result => {
-      response.status(201).json(result)
-    })
+    if (blog.title === undefined) {
+      console.log('Not adding blog without title')
+      return response.status(400).json({ error: 'Missing title' })
+    }
+    if (blog.url === undefined) {
+      console.log('Not adding blog without url')
+      return response.status(400).json({ error: 'Missing url' })
+    }
+
+    console.log('Adding blog', blog)
+    const savedBlog = await blog.save()
+
+    console.log('Saved blog', savedBlog)
+    user.blogs = user.blogs.concat(savedBlog._id)
+    await user.save()
+    response.status(201).json(savedBlog)
+  } catch (error) {
+    console.log(error)
+    response.status(500).end()
+  }
 })
 
 blogsRouter.put('/:id', async (request, response) => {

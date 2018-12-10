@@ -55,7 +55,7 @@ blogsRouter.post('/', async (request, response) => {
       await user.save()
       response.status(201).json(savedBlog)
     } else {
-      response.status(403).json({ error: 'User must be authenticated to add blogs' })
+      response.status(401).json({ error: 'User must be authenticated to add blogs' })
     }
   } catch (error) {
     console.log(error)
@@ -86,9 +86,17 @@ blogsRouter.put('/:id', async (request, response) => {
 
 blogsRouter.delete('/:id', async (request, response) => {
   try {
-    const blog = await Blog.findByIdAndDelete(request.params.id)
-    console.log('Deleting blog:', blog)
-    response.status(204).end()
+    if (response.locals.user.authenticated) {
+      const blog = await Blog.findById(request.params.id)
+      if (blog.user.toString() === response.locals.user.id) {
+        Blog.findByIdAndDelete(request.params.id)
+        response.status(204).end()
+      } else {
+        response.status(403).json({ error: 'Only allowed to delete blogs that you have added'})
+      }
+    } else {
+      response.status(401).json({ error: 'User must be authenticated to delete blogs' })
+    }
   } catch (err) {
     console.log(`Error deleting blog ${request.params.id}`, err)
   }

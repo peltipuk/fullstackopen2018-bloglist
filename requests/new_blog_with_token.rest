@@ -1,0 +1,10 @@
+POST http://localhost:3003/api/blogs
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ikphbm5lIiwiaWQiOiI1YzBlMGYwODYwZTQ2NjI4ZmFhYjE2MjIiLCJpYXQiOjE1NDQ0MjUyNzh9.bl1MrB12JCYYM8CJeq-o1CKCGECfX3XgAo7vuoITKAU
+
+{
+  "title": "Added by Janne",
+  "author": "Jake Joker",
+  "url": "http://www.janne.jake.example.com",
+  "likes": "5"
+}

@@ -2,8 +2,8 @@ POST http://localhost:3003/api/blogs
 content-type: application/json
 
 {
-  "title": "Your Fancy Blog",
-  "author": "James Moore",
-  "url": "http://www.example.com",
-  "likes": "0"
+  "title": "This blog is not authenticated",
+  "author": "Not Authenticated",
+  "url": "http://www.not.authenticated.example.com",
+  "likes": "100"
 }

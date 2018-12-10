@@ -9,6 +9,7 @@ const blogsRouter = require('./controllers/blogs')
 const usersRouter = require('./controllers/users')
 const loginRouter = require('./controllers/login')
 const config = require('./utils/config')
+const { jwtAuth, debugAuth } = require('./utils/jwt-auth')
 
 app.use(morgan(':method :url :body :status :res[content-length] - :response-time ms', { immediate: true }))
 morgan.token('body', (req) => {
@@ -17,6 +18,8 @@ morgan.token('body', (req) => {
 
 app.use(cors())
 app.use(bodyParser.json())
+app.use('/api', jwtAuth)
+app.use('/api', debugAuth)
 app.use('/api/blogs', blogsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
